@@ -30,7 +30,8 @@ module.exports = function (grunt) {
         function getUpdatedLcovFileContent(source) {
             if (grunt.file.exists(source.coverageReport)) {
                 var content = grunt.file.read(source.coverageReport);
-                return content.replace(/SF:\./ig, 'SF:' + (source.prefix || '.'));
+                return content;
+                //return content.replace(/SF:\./ig, 'SF:' + (source.prefix || '.'));
             } else {
                 grunt.log.error(source.coverageReport + " does not exist.");
                 return null;
@@ -42,13 +43,7 @@ module.exports = function (grunt) {
          * @param sources The sources.
          */
         function mergeLcovFiles(sources) {
-            var mergedAndUpdatedContent = '';
-            sources.forEach(function (source) {
-                if (hasLcovFile(source)) {
-                    mergedAndUpdatedContent = mergedAndUpdatedContent.concat(getUpdatedLcovFileContent(source) + '\n');
-                }
-            });
-            grunt.file.write(options.defaultOutputDir + 'coverage_report.lcov', mergedAndUpdatedContent);
+            grunt.file.write(options.defaultOutputDir + 'coverage_report.lcov', getUpdatedLcovFileContent(sources[0]));
         }
 
 
@@ -89,7 +84,7 @@ module.exports = function (grunt) {
                 return content;
             } else {
                 grunt.log.error(source.testReport + " does not exist.");
-                return null;
+                return "";
             }
         }
 
@@ -99,11 +94,9 @@ module.exports = function (grunt) {
          */
         function mergeJUnitFiles(sources) {
             var mergedAndUpdatedContent = '<?xml version="1.0"?><testsuites>';
-            sources.forEach(function (source) {
-                if (hasJunitFile(source)) {
-                    mergedAndUpdatedContent = mergedAndUpdatedContent.concat(getUpdatedJunitFileContent(source));
-                }
-            });
+            mergedAndUpdatedContent = mergedAndUpdatedContent.concat(getUpdatedJunitFileContent(sources[0]));
+            //merge qunit/jasmine report
+            mergedAndUpdatedContent = mergedAndUpdatedContent.concat(getUpdatedJunitFileContent({'testReport':'target/TEST-qunit-junit-test-results.xml'}));
             mergedAndUpdatedContent = mergedAndUpdatedContent.concat('</testsuites>');
             grunt.file.write(options.defaultOutputDir + 'TESTS-xunit.xml', mergedAndUpdatedContent);
         }
@@ -152,11 +145,12 @@ module.exports = function (grunt) {
         function getSonarArguments(data, options) {
             var args = [];
             args.push('-Dsonar.sourceEncoding=' + 'UTF-8');
-            args.push('-Dsonar.language=' + options.language);
-            args.push('-Dsonar.dynamicAnalysis=' + options.dynamicAnalysis);
-            args.push('-Dsonar.projectKey=' + data.project.key);
-            args.push('-Dsonar.projectName=' + data.project.name);
-            args.push('-Dsonar.projectVersion=' + data.project.version);
+            //Moved to sonar.properties
+            //args.push('-Dsonar.language=' + options.language);
+            //args.push('-Dsonar.dynamicAnalysis=' + options.dynamicAnalysis);
+            //args.push('-Dsonar.projectKey=' + data.project.key);
+            //args.push('-Dsonar.projectName=' + data.project.name);
+            //args.push('-Dsonar.projectVersion=' + data.project.version);
             args.push('-Dsonar.sources=' + getSourcePaths(data.sources));
             if (hasLcovFiles(data.sources)) {
                 args.push('-Dsonar.javascript.lcov.reportPath=' + options.defaultOutputDir + 'coverage_report.lcov');
